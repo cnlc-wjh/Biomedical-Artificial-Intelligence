@@ -1,0 +1,4 @@
+﻿target_delta,assumed_sd,alpha,power,n_per_group_normal_approx
+5,24,0.05,0.8,362
+10,24,0.05,0.8,91
+15,24,0.05,0.8,41
