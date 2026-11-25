@@ -1,0 +1,62 @@
+{
+  "python": "3.12.15",
+  "numpy": "2.3.5",
+  "pandas": "2.3.3",
+  "sklearn": "1.8.0",
+  "matplotlib": "3.10.8",
+  "threshold": 0.5,
+  "metrics": {
+    "train": {
+      "tn": 37,
+      "fp": 0,
+      "fn": 0,
+      "tp": 35,
+      "accuracy": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 1.0,
+      "precision": 1.0,
+      "f1": 1.0,
+      "roc_auc": 1.0,
+      "average_precision": 1.0,
+      "brier": 0.016584080802948722,
+      "log_loss": 0.09884043265553948
+    },
+    "validation": {
+      "tn": 12,
+      "fp": 0,
+      "fn": 0,
+      "tp": 12,
+      "accuracy": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 1.0,
+      "precision": 1.0,
+      "f1": 1.0,
+      "roc_auc": 1.0,
+      "average_precision": 1.0,
+      "brier": 0.011766036393776921,
+      "log_loss": 0.08721381083393166
+    },
+    "test": {
+      "tn": 12,
+      "fp": 0,
+      "fn": 0,
+      "tp": 12,
+      "accuracy": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 1.0,
+      "precision": 1.0,
+      "f1": 1.0,
+      "roc_auc": 1.0,
+      "average_precision": 1.0,
+      "brier": 0.01264120822588853,
+      "log_loss": 0.07449229980495913
+    }
+  },
+  "manual_max_error": 4.440892098500626e-16,
+  "hashes": {
+    "data\\student\\train.csv": "6105ca8752f374028bf6d0c94eb006c187616d125af27e46d1096eb9bc5c1935",
+    "data\\student\\validation.csv": "d29091f04a8a2230b8b2fd75b3e2eb25a33db0b5071e148028973526b2b820e1",
+    "data\\student\\locked-test-features.csv": "94ce3d6e3ece5b6d1fa1519be709dfcdfd2fdbb9eacc4282f9639939c6ec84f4",
+    "data\\teacher\\locked-test-labels.csv": "c4dfbbc229a1f947509755f91e8ac400da2ea0be0910eb8ad43a32b18e192f10"
+  }
+}
