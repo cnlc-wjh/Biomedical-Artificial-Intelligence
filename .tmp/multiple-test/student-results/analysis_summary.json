@@ -1,0 +1,49 @@
+{
+  "data_sha256": "915bce00295ac470f6bd970a4032730a170a080642a5da53ab0bcb0545156f19",
+  "shape": [
+    72,
+    7132
+  ],
+  "n_probes": 7129,
+  "missing_values": 0,
+  "duplicate_ids": 0,
+  "duplicate_expression_rows": 0,
+  "constant_probes": 0,
+  "nonfinite_values": 0,
+  "expression_min": -28400.0,
+  "expression_max": 71369.0,
+  "counts": {
+    "raw": 1694,
+    "Bonferroni": 26,
+    "BH": 535
+  },
+  "example": {
+    "probe": "U22376_cds2_s_at",
+    "rank": 1,
+    "mean_AML": 702.3636363636364,
+    "mean_ALL": 3863.296296296296,
+    "sd_AML": 360.33908273382525,
+    "sd_ALL": 1999.784907949522,
+    "delta": -3160.9326599326596,
+    "ci_low": -3977.848572908442,
+    "ci_high": -2344.0167469568773,
+    "pooled_sd": 1710.0688271974138,
+    "cohen_d": -1.8484242327912777,
+    "raw_p": 8.388714620330695e-09,
+    "bonferroni": 5.980314652833752e-05,
+    "bh": 5.980314652833752e-05
+  },
+  "bh_min_rank": 1,
+  "bh_min_value": 5.980314652833752e-05,
+  "bh_rank2_value": 0.0003500927989553135,
+  "bh_boundary_p": 0.0037466415234771663,
+  "bon_raw_threshold": 7.013606396409034e-06,
+  "bh_boundary_threshold": 0.003752279422078833,
+  "validation_passes": 7,
+  "versions": {
+    "Python": "3.14.6",
+    "numpy": "2.4.6",
+    "pandas": "3.0.3",
+    "scipy": "1.18.0"
+  }
+}

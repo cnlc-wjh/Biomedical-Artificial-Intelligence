@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>多重检验校正_初学者学习报告_最终版</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<p><strong>统计学课程作业报告</strong></p>
+<p><strong>多重检验校正</strong></p>
+<p>怎样从显著结果走向可信发现</p>
+<p><img src=".tmp/multiple-test/rendered/media/media/image1.png"
+style="width:6.85in;height:2.74in" /></p>
+<p>图 1 真实数据的发现数因错误控制目标而改变。</p>
+<p>研究对象：Golub 白血病表达数据中的 AML 与 ALL 比较</p>
+<p>阅读对象：刚开始学习统计推断与 Python 的学生</p>
+<p>核心结论：当一次研究做了成千上万次检验时，不能只凭原始 p
+值判断发现是否可靠。校正能帮助控制某类错误，但不能替代效应大小、研究设计和独立验证。</p>
+<h1 id="先看结论"><strong>先看结论</strong></h1>
+<p>本作业比较 AML（急性髓系白血病）与
+ALL（急性淋巴细胞白血病）的表达差异。训练部分有 38 个样本，包含 7,129
+个微阵列探针。若每个探针都按原始 p≤0.05 判断，得到 1,694
+个显著探针；经过 Bonferroni 校正后为 26 个，经过
+Benjamini–Hochberg（BH）校正后为 535
+个。不同数量来自不同的错误控制目标，不能把任意一个数量直接当成真实基因数。</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>本报告回答的问题</strong></th>
+<th style="text-align: center;"><strong>先记住的答案</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">为什么检验很多次会有问题？</td>
+<td
+style="text-align: left;">每次检验都留有随机误报机会；把很多次结果合并解读，整体误报风险会增加。</td>
+</tr>
+<tr>
+<td style="text-align: left;">Bonferroni 和 BH 各控制什么？</td>
+<td style="text-align: left;">Bonferroni
+主要控制整组至少一次误报的风险（FWER）；BH
+控制发现集合中假发现比例的长期平均（FDR）。</td>
+</tr>
+<tr>
+<td style="text-align: left;">535 个 BH 显著探针意味着什么？</td>
+<td
+style="text-align: left;">它们是在本分析和假设条件下值得进一步检查的统计候选，不等同于
+535 个已证实疾病基因。</td>
+</tr>
+<tr>
+<td style="text-align: left;">检验后还要看什么？</td>
+<td
+style="text-align: left;">效应方向与大小、置信区间、探针注释、数据质量和独立研究中的重复结果。</td>
+</tr>
+</tbody>
+</table>
+<h2 id="学习路线"><strong>学习路线</strong></h2>
+<ol type="1">
+<li><p>先看懂 p 值、显著性阈值和多重检验，再理解 FWER 与 FDR。</p></li>
+<li><p>用同一组简单 p 值手算 Bonferroni 与
+BH，弄清两种方法的差别。</p></li>
+<li><p>查看真实数据结果，并把统计数字翻译成有限度的结论。</p></li>
+<li><p>最后阅读代码解释，知道每一段程序输入什么、输出什么。</p></li>
+</ol>
+<h1 id="为什么做很多次检验会误报"><strong>1
+为什么做很多次检验会误报</strong></h1>
+<p>可以把一次统计检验想成在问一个具体问题，例如：“AML 与 ALL
+在这个探针上的平均表达量相同吗？”零假设 H₀ 说“平均值相同”。若 H₀
+真的成立，检验仍有小概率因为样本随机波动而错误地报出差异，这叫假阳性或第一类错误。</p>
+<p>显著性阈值 α=0.05
+的直观含义是：在模型和零假设成立时，若反复做同一种单项检验，错误拒绝零假设的比例约为
+5%。它不是“研究结论有 95% 概率是真的”，也不是“效应有多大”。</p>
+<h2
+id="用一千个完全没差别的变量来想"><strong>用一千个完全没差别的变量来想</strong></h2>
+<blockquote>
+<p><strong>预期假阳性数 = 真零假设数 × 单项错误率 = 1,000 × 0.05 =
+50</strong></p>
+<p>这说的是很多次实验的平均数量，不是每一次恰好出现 50
+个。期望数量的计算用到期望的线性性质，本身不要求各检验相互独立；但把“一次也不误报的概率”算成固定乘积时，需要独立性假设。</p>
+</blockquote>
+<p>如果一千个零假设检验彼此独立，至少出现一个假阳性的概率为：</p>
+<blockquote>
+<p><strong>FWER = 1 − (1 − 0.05)^1,000 ≈ 1</strong></p>
+<p>实际值极接近
+1。此处用独立性公式只作直觉说明；真实探针之间可能相关，不能直接把这个独立公式照搬到真实数据。</p>
+</blockquote>
+<p><strong>所以问题不在于</strong>单个 p
+值突然失去定义，而在于不能把大量未经校正的单项 p
+值集合，直接当成一组可靠发现。若再尝试多个亚组、模型和结局，实际“试过多少种办法”也会影响可信度。</p>
+<h2 id="几个容易混淆的词"><strong>几个容易混淆的词</strong></h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>词语</strong></th>
+<th style="text-align: center;"><strong>通俗解释</strong></th>
+<th style="text-align: center;"><strong>不要误读成</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">零假设 H₀</td>
+<td
+style="text-align: left;">本次检验暂时采用的基准说法，例如两组平均表达相同。</td>
+<td style="text-align: left;">“现实中绝对没有任何作用”的证明。</td>
+</tr>
+<tr>
+<td style="text-align: left;">α = 0.05</td>
+<td style="text-align: left;">单项检验预先选定的误报容许水平。</td>
+<td style="text-align: left;">结果为真的概率是 95%。</td>
+</tr>
+<tr>
+<td style="text-align: left;">多重检验家族</td>
+<td style="text-align: left;">这次研究中一起考虑的一组相关问题。</td>
+<td style="text-align: left;">只包含最后写进报告的显著结果。</td>
+</tr>
+</tbody>
+</table>
+<h1 id="先分清-fwer-和-fdr"><strong>2 先分清 FWER 和 FDR</strong></h1>
+<p>假设研究者把通过门槛的项目都放进候选名单。记 R 为名单总数，V
+为其中的假发现，S 为真实信号，于是
+R=V+S。模拟实验里我们事先知道哪些变量真的有差异，因此能够逐项统计 V 和
+S；真实白血病数据没有单项真值标签，不能直接数出真实的假发现。</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>指标</strong></th>
+<th style="text-align: center;"><strong>它问的问题</strong></th>
+<th style="text-align: center;"><strong>一句话记忆</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">FDP</td>
+<td
+style="text-align: left;">这一轮已经报出的名单里，假发现占了多少？</td>
+<td style="text-align: left;">本次名单的错误比例。</td>
+</tr>
+<tr>
+<td style="text-align: left;">FDR</td>
+<td style="text-align: left;">把研究重复很多次，每次先算 FDP
+再取平均是多少？</td>
+<td style="text-align: left;">长期平均的名单错误比例。</td>
+</tr>
+<tr>
+<td style="text-align: left;">FWER</td>
+<td
+style="text-align: left;">重复研究时，至少出现一个假发现的概率是多少？</td>
+<td style="text-align: left;">整组里有没有错一个。</td>
+</tr>
+<tr>
+<td style="text-align: left;">Power 检出力</td>
+<td
+style="text-align: left;">所有真实信号里，有多少比例被方法找出来？</td>
+<td style="text-align: left;">找回真信号的能力。</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>FDP = V / max(R, 1) FDR = E(FDP) FWER = P(V &gt;
+0)</strong></p>
+<p>如果本次没有任何发现，就约定 FDP=0，避免分母为零。FDR 是 FDP
+的期望，不是“每个发现正确的概率”。</p>
+</blockquote>
+<h2
+id="全零时两个错误指标会碰巧相同"><strong>全零时，两个错误指标会碰巧相同</strong></h2>
+<p>全零实验指每个变量都确知没有真实差异。有发现时，所有发现都是假的，FDP=1；没有发现时，FDP=0。因此，在这个特殊情形下，重复实验的
+FDR 与 FWER 相同。只要存在真实信号，两者就可以差得很远。</p>
+<p>例如一千次模拟里，BH 的 FWER 估计约为 0.754，而 FDR 估计约为
+0.046（平均约
+4.6%）。这并不矛盾：很多次实验可能至少错中一个，但每次名单里假发现的平均占比仍很低。</p>
+<h2 id="一个常见的数学坑"><strong>一个常见的数学坑</strong></h2>
+<blockquote>
+<p><strong>FDR ≠ 平均 V ÷ 平均 R</strong></p>
+<p>应当在每次实验中先算 FDP=V/max(R,1)，再把 1,000 个 FDP 求平均。先把 V
+和 R 各自平均再相除，一般不是同一个量。</p>
+</blockquote>
+<h1 id="两种校正方法怎样工作"><strong>3
+两种校正方法怎样工作</strong></h1>
+<h2
+id="bonferroni把单项门槛调严"><strong>Bonferroni：把单项门槛调严</strong></h2>
+<p>如果这一组一共做 m 次检验，Bonferroni 把每项的 p 值乘以 m（最大记为
+1），或等价地要求原始 p≤α/m。这样做的目标是控制
+FWER，也就是压低整组里至少出现一次假发现的概率。它简单、适用面广，但检验数量很大时门槛会很严，真实信号也可能被漏掉。</p>
+<blockquote>
+<p><strong>Bonferroni adjusted p = min(m × raw p, 1)</strong></p>
+<p>同一组完整检验必须先确定为家族。不能先看 p
+值挑出一小撮，再把家族假装成那一小撮。</p>
+</blockquote>
+<h2 id="bh按排序后的-p-值决定发现集合"><strong>BH：按排序后的 p
+值决定发现集合</strong></h2>
+<p>BH 是 Benjamini–Hochberg 方法。先把 m 个 p 值从小到大排好。对第 i
+个排序位置，比较 p(i) 与 i×q/m，q 通常取 0.05。找到最大的满足位置
+k，然后把排在 k 及其之前的都列入发现。它的目标是控制
+FDR；在许多探索性筛选里，比 Bonferroni 更有机会保留真信号。</p>
+<blockquote>
+<p><strong>在排序位置 i：p(i) ≤ i × q / m</strong></p>
+<p>BH 的控制结论依赖单项 p
+值有效，以及检验独立或具有适当的正相关结构等条件。任意相关结构下不能无条件承诺同一保证。</p>
+</blockquote>
+<h2 id="手算小例子"><strong>手算小例子</strong></h2>
+<p>假设这组里只有 5 个 p 值：0.001、0.009、0.020、0.040、0.200，阈值
+q=0.05。排序已经从小到大。</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>排序 i</strong></th>
+<th style="text-align: center;"><strong>原始 p(i)</strong></th>
+<th style="text-align: center;"><strong>Bonferroni adjusted
+p</strong></th>
+<th style="text-align: center;"><strong>BH 门槛 i×0.05/5</strong></th>
+<th style="text-align: center;"><strong>BH 是否满足</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0.001</td>
+<td style="text-align: center;">0.005</td>
+<td style="text-align: center;">0.010</td>
+<td style="text-align: center;">是</td>
+</tr>
+<tr>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">0.009</td>
+<td style="text-align: center;">0.045</td>
+<td style="text-align: center;">0.020</td>
+<td style="text-align: center;">是</td>
+</tr>
+<tr>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">0.020</td>
+<td style="text-align: center;">0.100</td>
+<td style="text-align: center;">0.030</td>
+<td style="text-align: center;">是</td>
+</tr>
+<tr>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">0.040</td>
+<td style="text-align: center;">0.200</td>
+<td style="text-align: center;">0.040</td>
+<td style="text-align: center;">是</td>
+</tr>
+<tr>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">0.200</td>
+<td style="text-align: center;">1.000</td>
+<td style="text-align: center;">0.050</td>
+<td style="text-align: center;">否</td>
+</tr>
+</tbody>
+</table>
+<p>BH 最大满足位置为 k=4，所以 BH 报出前 4 个。Bonferroni 只报前 2
+个。BH
+放宽一些，通常多保留候选；两种方法回答的是不同的错误控制目标，结果不同不表示谁算错。</p>
+<h1 id="这次真实数据分析做了什么"><strong>4
+这次真实数据分析做了什么</strong></h1>
+<p>课程数据来自 Golub 白血病表达数据。数据表共有 72 份样本和 7,129
+个数值探针；原课程把前 38 份作为 train（ALL 27 份、AML 11 份），后 34
+份作为 test（ALL 20 份、AML 14
+份）。本练习的问题是两种白血病亚型之间的表达差异，不是白血病与健康人的差异。</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>分析步骤</strong></th>
+<th
+style="text-align: center;"><strong>本作业事先固定的选择</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">研究问题</td>
+<td style="text-align: left;">比较 AML 与 ALL 的平均探针表达。</td>
+</tr>
+<tr>
+<td style="text-align: left;">发现样本</td>
+<td style="text-align: left;">train：ALL 27 份、AML 11 份。</td>
+</tr>
+<tr>
+<td style="text-align: left;">完整检验家族</td>
+<td style="text-align: left;">全部 7,129
+个探针；每个探针各做一次双侧检验。</td>
+</tr>
+<tr>
+<td style="text-align: left;">单项方法</td>
+<td style="text-align: left;">Welch t
+检验；允许两组的样本方差不同。</td>
+</tr>
+<tr>
+<td style="text-align: left;">效应方向</td>
+<td style="text-align: left;">AML 平均值减 ALL 平均值，正数表示 AML
+较高。</td>
+</tr>
+<tr>
+<td style="text-align: left;">阈值与校正</td>
+<td style="text-align: left;">原始、Bonferroni、BH adjusted p 均以 0.05
+作判断。</td>
+</tr>
+</tbody>
+</table>
+<h2
+id="为什么要把协议放在看结果之前"><strong>为什么要把协议放在看结果之前</strong></h2>
+<p>如果看过所有 p
+值后才决定要测哪些探针、选哪个模型或报告哪个亚组，研究者其实尝试的机会比报告里看起来的更多。多重检验家族应尽量对应研究问题和预先计划。先挑显著项目再对挑出的项目校正，会忘记最初的挑选过程。</p>
+<h2 id="真实数据的主要结果"><strong>真实数据的主要结果</strong></h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>判定方式</strong></th>
+<th style="text-align: center;"><strong>显著探针数</strong></th>
+<th style="text-align: center;"><strong>怎么理解</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">raw p ≤ 0.05</td>
+<td style="text-align: center;">1,694</td>
+<td style="text-align: left;">未作多重检验校正；数字较多。</td>
+</tr>
+<tr>
+<td style="text-align: left;">Bonferroni adjusted p ≤ 0.05</td>
+<td style="text-align: center;">26</td>
+<td
+style="text-align: left;">以整组至少一次误报风险为主要控制目标。</td>
+</tr>
+<tr>
+<td style="text-align: left;">BH adjusted p ≤ 0.05</td>
+<td style="text-align: center;">535</td>
+<td
+style="text-align: left;">以发现集合的假发现比例长期平均为主要控制目标。</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Bonferroni 原始 p 阈值 = 0.05 / 7,129 ≈
+0.00000701</strong></p>
+<p>BH 在第 535 个排序位置达到其规则门槛：该位置 raw p≈0.0037466，BH
+门槛约 0.0037523。</p>
+</blockquote>
+<p><img src=".tmp/multiple-test/rendered/media/media/image2.png"
+style="width:6.8in;height:1.36in" /></p>
+<p>图 2 先锁定候选再检查留出样本；这仍不等于独立外部验证。</p>
+<h1 id="显著结果还要配上效应大小"><strong>5
+显著结果还要配上效应大小</strong></h1>
+<p>一个小 p
+值说明观察到的数据与某个零假设不太相容；它不会告诉我们两组相差多少，也不会说明差异对生物学或临床有多重要。因此报告还应写出组均值、差值方向、置信区间和样本量。</p>
+<h2 id="例子u22376_cds2_s_at-探针"><strong>例子：U22376_cds2_s_at
+探针</strong></h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>指标</strong></th>
+<th style="text-align: center;"><strong>训练样本结果</strong></th>
+<th style="text-align: center;"><strong>初学者读法</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">AML 平均表达</td>
+<td style="text-align: left;">702.36</td>
+<td style="text-align: left;">AML 组的平均测量值。</td>
+</tr>
+<tr>
+<td style="text-align: left;">ALL 平均表达</td>
+<td style="text-align: left;">3,863.30</td>
+<td style="text-align: left;">ALL 组的平均测量值。</td>
+</tr>
+<tr>
+<td style="text-align: left;">差值 AML−ALL</td>
+<td style="text-align: left;">−3,160.93</td>
+<td style="text-align: left;">负号表示 AML 平均测量值更低。</td>
+</tr>
+<tr>
+<td style="text-align: left;">逐项 95% 置信区间</td>
+<td style="text-align: left;">[−3,977.85, −2,344.02]</td>
+<td
+style="text-align: left;">在本模型下，这项差值估计的不确定范围；不是整个
+7,129 项的同时区间。</td>
+</tr>
+<tr>
+<td style="text-align: left;">Cohen d</td>
+<td style="text-align: left;">−1.8484</td>
+<td style="text-align: left;">以组内标准差作单位的描述性效应大小。</td>
+</tr>
+<tr>
+<td style="text-align: left;">raw p</td>
+<td style="text-align: left;">约 8.39×10⁻⁹</td>
+<td style="text-align: left;">单项原始 p 值很小。</td>
+</tr>
+<tr>
+<td style="text-align: left;">完整家族 adjusted p</td>
+<td style="text-align: left;">Bonferroni 和 BH 均约 0.0000598</td>
+<td style="text-align: left;">在全部 7,129 项的家族下仍通过 0.05
+阈值。</td>
+</tr>
+</tbody>
+</table>
+<h2 id="正确与不正确的解读"><strong>正确与不正确的解读</strong></h2>
+<p>可以说：在这 38 份发现样本和当前分析方案下，这个探针的 AML
+平均表达测量值低于 ALL，差异在两种校正后仍显著。</p>
+<p>不能只凭这个表就说：这个探针代表一个确定的致病基因、会造成白血病、已经能用于诊断，或有某种倍数变化。原始表达数值不是
+log 尺度，均值差不能直接称为 fold
+change；一个微阵列探针也不保证等于一个独立基因。</p>
+<p><strong>逐项 95%
+区间</strong>通常只针对某一个事先指定的比较提供覆盖解释。这里的探针是从
+7,129
+项里筛出来的，逐项区间没有自动处理多重搜索和筛选，因此候选效应有被高估的可能。</p>
+<h1 id="为什么还要做已知真值模拟"><strong>6
+为什么还要做已知真值模拟</strong></h1>
+<p>真实数据里不知道每个探针的真实状态，因此无法直接数出有多少假发现。模拟实验让我们自己设定答案：先明确哪些变量真的有差异，再检查方法报出的名单。模拟变量是电脑生成的教学数据，不是患者样本，也没有混入真实
+CSV。</p>
+<p>课程模拟每次生成 1,000 个变量；ALL 组 27 个观测、AML 组 11
+个观测；噪声标准差为 1；共重复 1,000 次并固定随机种子
+42。每种方法使用同一批 p
+值，公平比较。模拟的变量独立且正态、两组方差相同，所以用双侧等方差 t
+检验；真实表达数据则使用 Welch 检验。</p>
+<h2
+id="a全部变量都没有真实差异"><strong>A：全部变量都没有真实差异</strong></h2>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>方法</strong></th>
+<th style="text-align: center;"><strong>平均发现数 R</strong></th>
+<th style="text-align: center;"><strong>FWER 估计</strong></th>
+<th style="text-align: center;"><strong>FDR 估计</strong></th>
+<th
+style="text-align: center;"><strong>本实验中发现全是假发现</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">raw</td>
+<td style="text-align: center;">49.944</td>
+<td style="text-align: center;">1.000</td>
+<td style="text-align: center;">1.000</td>
+<td style="text-align: center;">是</td>
+</tr>
+<tr>
+<td style="text-align: left;">Bonferroni</td>
+<td style="text-align: center;">0.051</td>
+<td style="text-align: center;">0.051</td>
+<td style="text-align: center;">0.051</td>
+<td style="text-align: center;">是</td>
+</tr>
+<tr>
+<td style="text-align: left;">BH</td>
+<td style="text-align: center;">0.052</td>
+<td style="text-align: center;">0.051</td>
+<td style="text-align: center;">0.051</td>
+<td style="text-align: center;">是</td>
+</tr>
+</tbody>
+</table>
+<p>原始方法平均约报出 50 个显著结果，与 1,000×0.05
+的粗略预期一致。Bonferroni 和 BH 在全零模拟中的错误比例约
+5%。模拟只重复了 1,000 次，0.051
+是这批重复的估计，不是理论真值必须精确等于 0.051。</p>
+<h2 id="b前-100-个变量有真实信号"><strong>B：前 100
+个变量有真实信号</strong></h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>真实效应 δ</strong></th>
+<th style="text-align: center;"><strong>方法</strong></th>
+<th style="text-align: center;"><strong>平均发现 R</strong></th>
+<th style="text-align: center;"><strong>平均假发现 V</strong></th>
+<th style="text-align: center;"><strong>FDR 估计</strong></th>
+<th style="text-align: center;"><strong>平均检出力</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">1.0</td>
+<td style="text-align: center;">raw</td>
+<td style="text-align: center;">122.523</td>
+<td style="text-align: center;">44.799</td>
+<td style="text-align: center;">0.364</td>
+<td style="text-align: center;">0.777</td>
+</tr>
+<tr>
+<td style="text-align: center;">1.0</td>
+<td style="text-align: center;">Bonferroni</td>
+<td style="text-align: center;">6.001</td>
+<td style="text-align: center;">0.044</td>
+<td style="text-align: center;">0.007</td>
+<td style="text-align: center;">0.060</td>
+</tr>
+<tr>
+<td style="text-align: center;">1.0</td>
+<td style="text-align: center;">BH</td>
+<td style="text-align: center;">30.094</td>
+<td style="text-align: center;">1.445</td>
+<td style="text-align: center;">0.046</td>
+<td style="text-align: center;">0.286</td>
+</tr>
+<tr>
+<td style="text-align: center;">0.5</td>
+<td style="text-align: center;">raw</td>
+<td style="text-align: center;">72.361</td>
+<td style="text-align: center;">44.799</td>
+<td style="text-align: center;">0.619</td>
+<td style="text-align: center;">0.276</td>
+</tr>
+<tr>
+<td style="text-align: center;">0.5</td>
+<td style="text-align: center;">Bonferroni</td>
+<td style="text-align: center;">0.270</td>
+<td style="text-align: center;">0.044</td>
+<td style="text-align: center;">0.039</td>
+<td style="text-align: center;">0.002</td>
+</tr>
+<tr>
+<td style="text-align: center;">0.5</td>
+<td style="text-align: center;">BH</td>
+<td style="text-align: center;">0.407</td>
+<td style="text-align: center;">0.072</td>
+<td style="text-align: center;">0.045</td>
+<td style="text-align: center;">0.003</td>
+</tr>
+</tbody>
+</table>
+<p>信号从 δ=1.0 变为 δ=0.5
+后，校正方法的平均检出力明显降低。真信号依然存在，只是较难从随机噪声中识别。Bonferroni
+的错误约束更严，常常漏掉一些真信号；BH 通常保留更多候选，但要接受 FDR
+目标所代表的集合层面错误容许。</p>
+<h1 id="预先锁定候选再查看留出样本"><strong>7
+预先锁定候选，再查看留出样本</strong></h1>
+<h2
+id="为什么不能只校正后来挑出的前-20-个"><strong>为什么不能只校正后来挑出的前
+20 个</strong></h2>
+<p>研究者查看同一批 7,129 个 p 值后挑出最小的 20 个，再把家族大小改写成
+20，会忽略“先从 7,129 个里选中这 20 个”的机会。被挑出来的 p
+值天生更小。只有当这 20
+个探针在看到当前数据之前，已经依据独立信息预先指定，且研究确实只检验它们时，20
+才可能是合适的家族大小。</p>
+<h2
+id="课程使用的候选锁定规则"><strong>课程使用的候选锁定规则</strong></h2>
+<ol start="5" type="1">
+<li><p>只在 train 的完整 7,129 个探针中执行发现分析。</p></li>
+<li><p>从 BH adjusted p≤0.05 的项目中按 raw p
+从小到大排序；同值时按探针名称排序。</p></li>
+<li><p>取前 10 个候选（如果不足 10
+个则全部保留），保存候选名和发现方向。</p></li>
+<li><p>锁定后才查看 test。对锁定候选做 Bonferroni
+校正，并要求验证方向与发现方向一致。</p></li>
+</ol>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>留出部分</strong></th>
+<th style="text-align: center;"><strong>样本量</strong></th>
+<th style="text-align: center;"><strong>检查结果</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">test 中的 ALL</td>
+<td style="text-align: center;">20</td>
+<td style="text-align: left;">只检验已经锁定的候选。</td>
+</tr>
+<tr>
+<td style="text-align: left;">test 中的 AML</td>
+<td style="text-align: center;">14</td>
+<td style="text-align: left;">验证家族最多 10 个，故 Bonferroni raw p
+门槛为 0.05/10=0.005。</td>
+</tr>
+<tr>
+<td style="text-align: left;">预先锁定候选</td>
+<td style="text-align: center;">10</td>
+<td style="text-align: left;">其中 7 个方向相同且通过候选家族
+Bonferroni；另 3 个未通过显著性规则。</td>
+</tr>
+</tbody>
+</table>
+<h2
+id="这一步增加了什么证据还缺什么"><strong>这一步增加了什么证据，还缺什么</strong></h2>
+<p>在留出样本中方向一致并通过预先规定的阈值，会增加这些候选可重复的证据。3
+个未通过阈值的候选并不能据此被证明完全没有差异。由于 test
+是同一历史数据集预留的部分，而非新招募的独立外部队列，这次练习不能称为外部临床验证，也不能证明因果机制或诊断价值。</p>
+<blockquote>
+<p><strong>可接受的结论：10 个预定候选中有 7
+个通过留出检查，结果仍属探索性证据。</strong></p>
+</blockquote>
+<h1 id="python-代码逐段读"><strong>8 Python 代码逐段读</strong></h1>
+<p>你不需要一次读懂整本
+Notebook。先把代码看成一串明确的小步骤：读入表格、分组、对每个探针做检验、校正
+p 值、数出通过门槛的探针。下面的小片段对应课程 Notebook 的主要逻辑。</p>
+<h2 id="第-1-步载入需要的工具"><strong>第 1
+步：载入需要的工具</strong></h2>
+<blockquote>
+<p>import numpy as np</p>
+<p>import pandas as pd</p>
+<p>from scipy import stats</p>
+</blockquote>
+<p>NumPy 负责数组和数值运算；pandas 负责读取和处理表格；SciPy
+提供统计检验函数。import 只是把这些已经安装的工具载入当前程序。</p>
+<h2 id="第-2-步读-csv挑出表达值"><strong>第 2 步：读
+CSV，挑出表达值</strong></h2>
+<blockquote>
+<p>df = pd.read_csv("data/leukemia.csv")</p>
+<p>meta = ["sample_id", "original_split", "diagnosis"]</p>
+<p>probe_columns = [c for c in df.columns if c not in meta]</p>
+</blockquote>
+<p>CSV 可以理解为普通的逗号分隔表格。`df` 是整张数据表；`meta`
+列保存样本编号、原始分组和诊断类型；剩下的列才是 7,129
+个探针的数值。代码通过列名排除元信息，不把诊断标签错误地当成探针。</p>
+<h2 id="第-3-步把-aml-和-all-的数据分开"><strong>第 3 步：把 AML 和 ALL
+的数据分开</strong></h2>
+<blockquote>
+<p>train = df[df["original_split"] == "train"]</p>
+<p>aml = train.loc[train["diagnosis"] == "AML", probe_columns]</p>
+<p>all_ = train.loc[train["diagnosis"] == "ALL", probe_columns]</p>
+</blockquote>
+<p>方括号内的条件是在筛选行。先只拿 train，再按 diagnosis 分组。`aml` 与
+`all_` 每一行是一个样本、每一列是同一个探针；下划线只是为了避免变量名与
+Python 关键字 all 冲突。</p>
+<h1 id="python-代码逐段读续"><strong>8 Python
+代码逐段读（续）</strong></h1>
+<h2 id="第-4-步一次比较全部探针"><strong>第 4
+步：一次比较全部探针</strong></h2>
+<blockquote>
+<p>test = stats.ttest_ind(</p>
+<p>aml.to_numpy(), all_.to_numpy(),</p>
+<p>axis=0, equal_var=False</p>
+<p>)</p>
+<p>p = test.pvalue</p>
+</blockquote>
+<p>`ttest_ind` 比较两组独立样本的均值。`axis=0`
+表示沿着样本行计算，所以每个探针列会得到一个 p 值；`equal_var=False`
+采用 Welch t 检验，不要求两组的方差相等。`p` 是长度为 7,129
+的数组，每个位置对应一个探针。</p>
+<h2 id="第-5-步bonferroni-调整"><strong>第 5 步：Bonferroni
+调整</strong></h2>
+<blockquote>
+<p>m = len(p)</p>
+<p>bonferroni_p = np.minimum(m * p, 1.0)</p>
+</blockquote>
+<p>`len(p)` 得到检验次数 m。把每个原始 p 值乘以 7,129，超过 1 的改成
+1。随后数一数 adjusted p≤0.05 的有多少项。`np.minimum`
+是逐个数值取较小值。</p>
+<h2 id="第-6-步bh-排序规则的精简写法"><strong>第 6 步：BH
+排序规则的精简写法</strong></h2>
+<blockquote>
+<p>order = np.argsort(p)</p>
+<p>p_sorted = p[order]</p>
+<p>ranks = np.arange(1, m + 1)</p>
+<p>passed = np.where(p_sorted &lt;= 0.05 * ranks / m)[0]</p>
+<p>k = passed[-1] + 1 if len(passed) else 0</p>
+<p>cutoff = p_sorted[k - 1] if k else -1</p>
+<p>discoveries = p &lt;= cutoff</p>
+</blockquote>
+<p>`argsort` 给出从小到大排列时每个 p 值的原位置；`ranks` 是 1 到
+m。程序找出所有满足 BH 排序门槛的位置，取最大的一个 k，再把排序前 k
+个列为发现。这段是帮助理解规则的简写；课程 Notebook 还计算每个探针对应的
+BH adjusted p，便于直接用 adjusted p≤0.05 作判断。</p>
+<h1 id="python-代码逐段读续-1"><strong>8 Python
+代码逐段读（续）</strong></h1>
+<h2 id="第-7-步数显著项目"><strong>第 7 步：数显著项目</strong></h2>
+<blockquote>
+<p>raw_count = int((p &lt;= 0.05).sum())</p>
+<p>bon_count = int((bonferroni_p &lt;= 0.05).sum())</p>
+<p>bh_count = int((bh_adjusted_p &lt;= 0.05).sum())</p>
+</blockquote>
+<p>`p &lt;= 0.05` 会逐项产生 True 或 False；`.sum()` 把 True 当作
+1、False 当作 0 来数数量；`int` 把结果转成普通整数。`bh_adjusted_p`
+在课程 Notebook 中由校正函数算出。</p>
+<h2
+id="模拟程序中这几个词的含义"><strong>模拟程序中这几个词的含义</strong></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>代码或符号</strong></th>
+<th style="text-align: center;"><strong>简单解释</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">rng = np.random.default_rng(42)</td>
+<td
+style="text-align: left;">创建可重复的随机数生成器。相同设置与软件环境下，便于复现实验。</td>
+</tr>
+<tr>
+<td style="text-align: left;">delta</td>
+<td style="text-align: left;">模拟中给真信号增加的均值差；δ
+越小，信号相对噪声越难识别。</td>
+</tr>
+<tr>
+<td style="text-align: left;">truth</td>
+<td style="text-align: left;">电脑事先知道哪些变量是真信号；真实 CSV
+没有这样的真值标签。</td>
+</tr>
+<tr>
+<td style="text-align: left;">R、V、S</td>
+<td style="text-align: left;">分别是总发现数、假发现数、真发现数；每次
+R=V+S。</td>
+</tr>
+<tr>
+<td style="text-align: left;">FDP 与 any_false</td>
+<td style="text-align: left;">每次的错误比例
+V/max(R,1)，以及本次是否至少错一次。</td>
+</tr>
+<tr>
+<td style="text-align: left;">power</td>
+<td
+style="text-align: left;">本次找回的真信号比例；全零时没有真信号，power
+应记为 N/A。</td>
+</tr>
+</tbody>
+</table>
+<h2 id="初学者运行建议"><strong>初学者运行建议</strong></h2>
+<ul>
+<li><p>先安装 requirements.txt 中列出的库，再在 VS Code 中打开 Jupyter
+Notebook。</p></li>
+<li><p>按 Notebook
+顺序运行，先看预测和分析协议，再运行发现分析。</p></li>
+<li><p>不要根据 test
+结果换候选；需要重跑时，用新的运行编号并记录种子与软件版本。</p></li>
+<li><p>出错时先看 Python
+报错最后一行，并确认当前工作目录和数据文件路径。</p></li>
+</ul>
+<h1 id="可以直接参考的报告结论"><strong>9
+可以直接参考的报告结论</strong></h1>
+<p>在 Golub 白血病表达数据的 38 份发现样本中，我们比较了 AML 与 ALL
+的平均探针表达，对全部 7,129 个探针分别进行双侧 Welch t 检验。原始
+p≤0.05 的探针为 1,694 个；Bonferroni adjusted p≤0.05 的探针为 26 个；BH
+adjusted p≤0.05 的探针为 535
+个。两种校正方法控制不同层面的错误，因此发现数量不同。</p>
+<p>按预先规定的排序规则，从发现样本中锁定 10 个 BH
+显著候选。在历史留出样本中，有 7
+个候选方向与发现样本一致，并通过候选家族 Bonferroni
+校正。该留出部分属于同一数据来源的历史样本，不是新开展的外部队列。结果支持把部分探针作为后续探索候选，但不能证明疾病因果机制、独立基因数量、患者诊断效能或临床应用价值。进一步研究仍需核对探针注释、检查样本和批次质量，并在独立研究中验证。</p>
+<h2 id="交作业前的五项自查"><strong>交作业前的五项自查</strong></h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>检查项</strong></th>
+<th style="text-align: center;"><strong>完成了吗？</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td
+style="text-align: left;">写明实际测试的家族大小、样本分组和单项检验方法。</td>
+<td style="text-align: center;">□</td>
+</tr>
+<tr>
+<td style="text-align: left;">区分原始 p、adjusted p、FDP、FDR 与
+FWER。</td>
+<td style="text-align: center;">□</td>
+</tr>
+<tr>
+<td style="text-align: left;">没有把 BH adjusted p 写成 Storey q-value
+或单项为真的概率。</td>
+<td style="text-align: center;">□</td>
+</tr>
+<tr>
+<td
+style="text-align: left;">报告效应方向、大小和区间，并说明区间是逐项还是同时覆盖。</td>
+<td style="text-align: center;">□</td>
+</tr>
+<tr>
+<td
+style="text-align: left;">结论说明留出样本与外部验证的区别，也没有越界声称因果或临床价值。</td>
+<td style="text-align: center;">□</td>
+</tr>
+</tbody>
+</table>
+<h2 id="术语小抄"><strong>术语小抄</strong></h2>
+<p>p-value：在零假设和模型成立时，观察到当前或更极端数据的概率。
+adjusted p-value：在某个指定的多重检验方法和完整家族下调整后的显著性量。
+q-value：FDR 框架中的相关量，具体定义与软件实现有关，本课没有计算 Storey
+q-value。检验家族：需要一起考虑错误控制的一组假设。效应量：差异大小的描述，不等同于显著性。</p>
+<h1 id="参考资料与数据来源"><strong>参考资料与数据来源</strong></h1>
+<p>本报告中的分析设置、教学模拟参数和结果以课程项目的学生
+Notebook、工作单、实验设计与数据说明为准。外部文献用于核对统计方法和原始数据引用。</p>
+<ol start="9" type="1">
+<li><p>Benjamini Y, Hochberg Y. Controlling the False Discovery Rate: A
+Practical and Powerful Approach to Multiple Testing. Journal of the
+Royal Statistical Society: Series B. 1995;57(1):289–300. DOI:
+10.1111/j.2517-6161.1995.tb02031.x</p></li>
+</ol>
+<p>论文说明了 FDR 这一集合层面的错误率，并提出 Benjamini–Hochberg
+方法。作者期刊页面：https://rss.onlinelibrary.wiley.com/doi/abs/10.1111/j.2517-6161.1995.tb02031.x</p>
+<ol start="10" type="1">
+<li><p>Storey JD. A direct approach to false discovery rates. Journal of
+the Royal Statistical Society: Series B. 2002;64(3):479–498. DOI:
+10.1111/1467-9868.00346</p></li>
+</ol>
+<p>用于区分 FDR 与 q-value
+相关定义的背景阅读。作者期刊页面：https://academic.oup.com/jrsssb/article/64/3/479/7098513</p>
+<ol start="11" type="1">
+<li><p>Golub TR, et al. Molecular Classification of Cancer: Class
+Discovery and Class Prediction by Gene Expression Monitoring. Science.
+1999;286(5439):531–537. DOI: 10.1126/science.286.5439.531</p></li>
+</ol>
+<p>数据集页面将这篇研究列为 leukemia
+数据集引用来源：https://pubmed.ncbi.nlm.nih.gov/10521349/</p>
+<ol start="12" type="1">
+<li><p>OpenML dataset 1104: leukemia, version 1. 页面记录 72
+个样本、7,129
+个数值特征，并提供原研究引用信息。https://www.openml.org/search?id=1104&amp;sort=runs&amp;type=data</p></li>
+<li><p>SciPy documentation. scipy.stats.false_discovery_control：介绍 BH
+与 BY
+多重检验校正函数。https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.false_discovery_control.html</p></li>
+</ol>
+<h2 id="写作边界"><strong>写作边界</strong></h2>
+<p>本报告面向初学者解释课程作业，不构成临床诊断或生物医学结论。统计显著只是在设定模型、数据质量和分析协议下的一类证据；最终科学结论仍依赖领域知识和预先设计的后续研究。</p>
+</body>
+</html>

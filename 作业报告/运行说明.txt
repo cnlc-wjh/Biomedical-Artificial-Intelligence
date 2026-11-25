@@ -1,0 +1,11 @@
+多重检验报告配套复现
+
+在项目根目录运行：
+python 作业报告/复现分析.py
+
+依赖：numpy、pandas、scipy。
+输入为 data/leukemia.csv；不修改原始数据。
+结果位于 .tmp/multiple-test/student-results/。
+完整结果和环境记录已纳入压缩包。
+
+本次为公开课堂结果后的复现，不构成首次盲法验证。
