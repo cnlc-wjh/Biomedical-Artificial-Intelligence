@@ -1,0 +1,7 @@
+labels,pca10,fold,train_ba,validation_ba
+real,False,1,1.0,0.8194444444444444
+real,False,2,1.0,0.875
+real,False,3,1.0,0.8333333333333333
+real,True,1,1.0,0.6944444444444444
+real,True,2,1.0,0.7638888888888888
+real,True,3,1.0,0.8333333333333333

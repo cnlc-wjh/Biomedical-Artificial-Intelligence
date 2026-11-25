@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>降维、PCA 与 UMAP：白血病表达数据分析报告</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title"><strong>降维、PCA 与
+UMAP：白血病表达数据分析报告</strong></h1>
+</header>
+<h1 id="摘要"><strong>1 摘要</strong></h1>
+<p>本报告使用 72 份白血病微阵列表达样本及 7,129 个探针，考察标准化、PCA
+与 UMAP 在描述高维样本结构和支持后续预测时分别保留了什么信息。数据包含
+47 份 ALL 和 25 份 AML；原始划分为训练集 38 份、测试集 34 份。标准化 PCA
+的 PC1 和 PC2 分别解释 14.9216% 和 9.4462% 的方差，前两维合计
+24.3678%，累计达到 80% 和 90% 分别需要 37 和 51 个成分。基线 UMAP
+与标准化原空间的二维 5 近邻平均重合为 41.11%；改变邻居数、min_dist
+或随机种子后，局部邻域会变化。训练集内三折比较中，标准化后直接使用 1
+近邻的平均验证 balanced accuracy 为 0.8426，加入 PCA(10) 后为
+0.7639。结果支持把二维图作为探索线索，但不能凭图证明疾病机制、真实亚型数量或新患者预测能力。</p>
+<h1 id="研究问题"><strong>2 研究问题</strong></h1>
+<p>本研究围绕三个问题展开：第一，PCA 和 UMAP 把 7,129
+维表达矩阵压缩到二维时，各自保留什么、隐藏什么？第二，标准化会如何改变
+PCA
+的主要方向？第三，二维图中的样本分离和近邻关系，在参数变化及预测验证中有多稳定？</p>
+<p>每行代表一份白血病样本，标签为 ALL 或
+AML；每个表达列对应一个探针。探针不等同于不同基因，也不保证彼此独立。教学编号
+G001–G072 只能用于追踪样本，不能证明存在 72
+位互不重复的患者；本数据还缺少可用于排查批次效应的字段。</p>
+<p>实验前个人判断：________；信心（0—100）：________；最想补充的一项证据：________。这些是实验前记录，请按当时真实想法补填。</p>
+<h2 id="pca-与-umap-简介及计算原理"><strong>PCA 与 UMAP
+简介及计算原理</strong></h2>
+<p>PCA（主成分分析）把多个原始探针转换为较少的综合坐标。先按列中心化；需要时再标准化为
+zᵢⱼ=(xᵢⱼ−μⱼ)/sⱼ。第一主成分选择单位向量 w₁，使所有样本投影 t₁=Zw₁
+的方差最大；后续主成分与前面方向正交，并依次解释剩余方差。计算上可对中心化矩阵做奇异值分解
+Z=UΣVᵀ；样本坐标由投影得到，解释率由各方向方差除以总方差得到。</p>
+<p>UMAP（统一流形近似与投影）不直接寻找最大方差方向。它先根据高维样本距离为每个样本找近邻，形成带权的邻居关系图，再给每个样本安排二维坐标。算法迭代调整坐标，让高维中关系较强的近邻在二维中尽量靠近，同时避免所有点挤在一起。n_neighbors
+影响高维邻域尺度，min_dist
+影响二维点的紧密程度；随机种子可能改变初始化和最终布局。UMAP
+坐标不是探针线性组合，也没有 PCA 同义的方差解释率。</p>
+<p>两种方法的共同点是压缩表示、都可能丢失信息；区别是 PCA
+优先呈现线性投影方差，UMAP
+优先近似呈现局部邻域。以下按工作单任务逐项报告实验设计、结果与解释。</p>
+<h1 id="任务解答与实验结果"><strong>3 任务解答与实验结果</strong></h1>
+<h2 id="任务一明确降维目的与拟合范围"><strong>3.1
+任务一：明确降维目的与拟合范围</strong></h2>
+<p><strong>实验设计：</strong>依据工作单，将五种降维目标分别配对需要的输出和评价方式；再区分描述当前
+72
+个样本与预测未见样本两条流程。工作单列出的交叉验证比较属于可选验证，本次实际完成。</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>目标</strong></th>
+<th style="text-align: center;"><strong>需要的输出</strong></th>
+<th style="text-align: center;"><strong>如何评价是否有用</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">可视化</td>
+<td style="text-align: center;">二维/三维样本坐标和标注图</td>
+<td
+style="text-align: center;">能否观察、追踪关系；改变设置后主要关系是否稳健，不能只看图是否漂亮。</td>
+</tr>
+<tr>
+<td style="text-align: center;">去噪</td>
+<td style="text-align: center;">保留信号的低维表示或重建数据</td>
+<td
+style="text-align: center;">重复测量是否更一致、真实信号是否保留，或独立下游验证是否改善；仅图更平滑不足以证明。</td>
+</tr>
+<tr>
+<td style="text-align: center;">压缩特征</td>
+<td style="text-align: center;">较少坐标及可应用的变换规则</td>
+<td
+style="text-align: center;">权衡保留维数、解释率、重建误差、存储和计算成本。</td>
+</tr>
+<tr>
+<td style="text-align: center;">发现样本结构</td>
+<td style="text-align: center;">候选邻域、梯度或分组</td>
+<td
+style="text-align: center;">检查跨参数、批次和独立样本的稳定性，并结合外部信息。</td>
+</tr>
+<tr>
+<td style="text-align: center;">后续模型输入</td>
+<td style="text-align: center;">训练集拟合的降维变换和下游模型</td>
+<td
+style="text-align: center;">用无泄露交叉验证和独立测试评估预测表现与计算成本。</td>
+</tr>
+</tbody>
+</table>
+<p><strong>描述当前数据的流程：</strong>全部 72 个样本表达矩阵 → 在这 72
+个样本拟合标准化 → PCA/UMAP 拟合并生成坐标 → 拟合完成后按诊断着色 →
+描述当前样本结构。</p>
+<p><strong>预测新样本的流程：</strong>先锁定训练/测试划分 →
+每个训练折内拟合标准化、PCA（若用）与分类器 →
+用已拟合流程转换并预测验证折 → 固定方案后以训练数据重拟合 →
+最后评估独立测试集。</p>
+<p><strong>为什么全数据 PCA 仍会泄露：</strong>PCA
+不用标签，但会从输入学习均值、协方差和主成分方向；StandardScaler
+也从输入学习均值和尺度。若验证折参与这些拟合，验证数据的分布信息已进入模型流程。因此预测任务须把全部拟合步骤放在
+Pipeline 中并在每个训练折内拟合。</p>
+<p><strong>本次可选验证设计：</strong>仅使用原始 38 个训练样本，固定
+StratifiedKFold(3, shuffle=True, random_state=42)，比较
+StandardScaler→1近邻 与 StandardScaler→PCA(10,
+svd_solver="full")→1近邻，以 balanced accuracy 评价；原始 34
+个测试样本未用于评分或调参。</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>验证折</strong></th>
+<th style="text-align: center;"><strong>标准化→1近邻</strong></th>
+<th
+style="text-align: center;"><strong>标准化→PCA(10)→1近邻</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0.819444</td>
+<td style="text-align: center;">0.694444</td>
+</tr>
+<tr>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">0.875000</td>
+<td style="text-align: center;">0.763889</td>
+</tr>
+<tr>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">0.833333</td>
+<td style="text-align: center;">0.833333</td>
+</tr>
+<tr>
+<td style="text-align: center;">三折平均</td>
+<td style="text-align: center;">0.842593</td>
+<td style="text-align: center;">0.763889</td>
+</tr>
+</tbody>
+</table>
+<p><strong>结果解释：</strong>本次固定三折比较中，加入 PCA(10)
+后平均验证 balanced accuracy 较低；这不表示 PCA
+总会降低预测表现。样本量小，结果依赖当前划分和模型。balanced accuracy 是
+ALL 与 AML 两类召回率的平均值，不是总正确率。两套 1
+近邻模型的训练分数均为 1.0，训练满分不代表新样本泛化。</p>
+<h2 id="任务二pca-保留了什么又丢掉了什么"><strong>3.2 任务二：PCA
+保留了什么，又丢掉了什么</strong></h2>
+<p><strong>实验设计：</strong>使用全部 72 行、7,129 个探针，不纳入
+sample_id、original_split、diagnosis。按列标准化并检查均值与总体标准差；对标准化矩阵做
+PCA，同时对仅中心化、未除以标准差的原尺度矩阵做对照。记录解释率、累计解释率、PC1
+五个最大绝对权重探针及坐标。该任务描述当前数据，不是预测评估。</p>
+<p><strong>预处理结果：</strong>StandardScaler 的变换是
+zᵢⱼ=(xᵢⱼ−μⱼ)/σⱼ。标准化后列均值绝对值最大为 5.98×10⁻¹⁶，各列总体标准差与
+1 的差的绝对值最大为
+3.33×10⁻¹⁶，属于浮点误差。此按列标准化不是微阵列上游归一化；数据含负值，本课不对其直接取
+log 或 log1p。</p>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>PCA 输入</strong></th>
+<th style="text-align: center;"><strong>PC1 解释率</strong></th>
+<th style="text-align: center;"><strong>PC2 解释率</strong></th>
+<th style="text-align: center;"><strong>前两项合计</strong></th>
+<th style="text-align: center;"><strong>达到 80% 最少成分</strong></th>
+<th style="text-align: center;"><strong>达到 90% 最少成分</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">标准化</td>
+<td style="text-align: center;">14.9216%</td>
+<td style="text-align: center;">9.4462%</td>
+<td style="text-align: center;">24.3678%</td>
+<td style="text-align: center;">37</td>
+<td style="text-align: center;">51</td>
+</tr>
+<tr>
+<td style="text-align: center;">原尺度，仅中心化</td>
+<td style="text-align: center;">17.4278%</td>
+<td style="text-align: center;">10.3386%</td>
+<td style="text-align: center;">27.7664%</td>
+<td style="text-align: center;">20</td>
+<td style="text-align: center;">34</td>
+</tr>
+</tbody>
+</table>
+<p><img
+src="docx-preview-media/media/image3.png"
+style="width:6.35in;height:2.74909in" /></p>
+<p>图 1 标准化 PCA 与原尺度 PCA；轴括号为各自输入空间的解释率</p>
+<p><img
+src="docx-preview-media/media/image2.png"
+style="width:5.8in;height:3.86667in" /></p>
+<p>图 2 两种 PCA 输入的累计解释率</p>
+<p><strong>图和解释率：</strong>标准化 PCA 前两维合计解释 24.3678%
+的总方差；其余约 75.63% 位于 PC3
+及后续方向，二维图未显示。被省略的方差不等于样本在 PC1、PC2
+上完全重合；样本可在二维图上分开，同时在未显示方向上仍有差异。两种输入的总方差基准不同，不能只凭解释率更高断定某一预处理更好。</p>
+<p><strong>PC1 权重表：</strong>本报告将 pca.components_.T
+定义为主成分方向权重（loading）；表中按 PC1 权重绝对值排序。</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>输入方案</strong></th>
+<th style="text-align: center;"><strong>探针</strong></th>
+<th style="text-align: center;"><strong>PC1 带符号权重</strong></th>
+<th style="text-align: center;"><strong>原始尺度标准差</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">standardized</td>
+<td style="text-align: center;">X92518_s_at</td>
+<td style="text-align: center;">+0.02878558</td>
+<td style="text-align: center;">326.91</td>
+</tr>
+<tr>
+<td style="text-align: center;">standardized</td>
+<td style="text-align: center;">X95190_at</td>
+<td style="text-align: center;">-0.02817682</td>
+<td style="text-align: center;">363.72</td>
+</tr>
+<tr>
+<td style="text-align: center;">standardized</td>
+<td style="text-align: center;">X98253_at</td>
+<td style="text-align: center;">+0.02792670</td>
+<td style="text-align: center;">348.96</td>
+</tr>
+<tr>
+<td style="text-align: center;">standardized</td>
+<td style="text-align: center;">X82895_at</td>
+<td style="text-align: center;">+0.02787138</td>
+<td style="text-align: center;">355.47</td>
+</tr>
+<tr>
+<td style="text-align: center;">standardized</td>
+<td style="text-align: center;">Y09616_at</td>
+<td style="text-align: center;">+0.02775694</td>
+<td style="text-align: center;">531.14</td>
+</tr>
+<tr>
+<td style="text-align: center;">raw</td>
+<td style="text-align: center;">M25079_s_at</td>
+<td style="text-align: center;">+0.35238761</td>
+<td style="text-align: center;">15782.80</td>
+</tr>
+<tr>
+<td style="text-align: center;">raw</td>
+<td style="text-align: center;">hum_alu_at</td>
+<td style="text-align: center;">+0.31355189</td>
+<td style="text-align: center;">10806.78</td>
+</tr>
+<tr>
+<td style="text-align: center;">raw</td>
+<td style="text-align: center;">HG1428-HT1428_s_at</td>
+<td style="text-align: center;">+0.23486702</td>
+<td style="text-align: center;">10956.53</td>
+</tr>
+<tr>
+<td style="text-align: center;">raw</td>
+<td style="text-align: center;">L06499_at</td>
+<td style="text-align: center;">+0.21045324</td>
+<td style="text-align: center;">7625.23</td>
+</tr>
+<tr>
+<td style="text-align: center;">raw</td>
+<td style="text-align: center;">J04617_s_at</td>
+<td style="text-align: center;">+0.19625269</td>
+<td style="text-align: center;">6846.94</td>
+</tr>
+</tbody>
+</table>
+<p><strong>PC1 如何计算：</strong>对样本 i，PC1 得分是全部 7,129
+个输入特征的加权和：PC1ᵢ=Σⱼ wⱼzᵢⱼ。标准化 PCA 中 X92518_s_at 的权重约
++0.02878558，它只贡献总和的一项；高权重不等于致病、差异显著或分类最重要。</p>
+<p><strong>尺度对照解释：</strong>两种 PCA
+的前五探针完全不同。原尺度前五探针的原始标准差约
+6,846.94–15,782.80；标准化方案所列前五约
+326.91–531.14。原尺度中的大波动特征更容易影响总方差方向；标准化让各探针以自身标准差为单位比较，但也可能相对放大低变异噪声。</p>
+<p><strong>概念题结果：</strong>PC1
+在单位长度方向中最大化样本投影方差，不是使用 ALL/AML
+标签找出的最佳分类方向，也不是单一基因。若把所有主成分权重和得分同时乘以
+−1，只会翻转坐标轴符号，不改变解释率和样本几何关系。中心化后 72
+个样本偏差之和为零，样本行至少有一个线性依赖关系，因此矩阵秩最多
+min(72−1,7129)=71，最多有 71 个非零主成分。</p>
+<p><strong>一句解释 PC1：</strong>标准化 PC1
+是全部探针共同构成的线性方向，解释本数据总方差的 14.9216%。</p>
+<p><strong>一句不能推出的结论：</strong>不能由 PC1
+权重或二维图中的诊断趋势推断该探针致病、发现真实疾病机制，或保证对新患者预测准确。</p>
+<h2 id="任务三umap-上的结构可以相信到什么程度"><strong>3.3 任务三：UMAP
+上的结构可以相信到什么程度</strong></h2>
+<p><strong>实验设计：</strong>沿用任务二同一个 72×7,129
+标准化矩阵，不按诊断筛选探针，拟合二维
+UMAP；度量为欧氏距离，n_jobs=1。基线设
+n_neighbors=15、min_dist=0.1、random_state=42，再各自只改变邻居数、min_dist
+或随机种子。各次坐标均与 sample_id
+对应保存，避免只挑最清楚的一张图。</p>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>设置</strong></th>
+<th style="text-align: center;"><strong>n_neighbors</strong></th>
+<th style="text-align: center;"><strong>min_dist</strong></th>
+<th style="text-align: center;"><strong>种子</strong></th>
+<th style="text-align: center;"><strong>原空间5近邻保留</strong></th>
+<th
+style="text-align: center;"><strong>与基线二维5近邻重合</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">基线</td>
+<td style="text-align: center;">15</td>
+<td style="text-align: center;">0.1</td>
+<td style="text-align: center;">42</td>
+<td style="text-align: center;">41.11%</td>
+<td style="text-align: center;">100.00%</td>
+</tr>
+<tr>
+<td style="text-align: center;">仅改邻居数</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">0.1</td>
+<td style="text-align: center;">42</td>
+<td style="text-align: center;">45.56%</td>
+<td style="text-align: center;">55.28%</td>
+</tr>
+<tr>
+<td style="text-align: center;">仅改 min_dist</td>
+<td style="text-align: center;">15</td>
+<td style="text-align: center;">0.5</td>
+<td style="text-align: center;">42</td>
+<td style="text-align: center;">40.00%</td>
+<td style="text-align: center;">64.17%</td>
+</tr>
+<tr>
+<td style="text-align: center;">仅改随机种子</td>
+<td style="text-align: center;">15</td>
+<td style="text-align: center;">0.1</td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">40.56%</td>
+<td style="text-align: center;">60.28%</td>
+</tr>
+</tbody>
+</table>
+<p><img
+src="docx-preview-media/media/image4.png"
+style="width:5.7in;height:4.53005in" /></p>
+<p>图 3 基线 UMAP 与三个单因素参数/随机种子对照</p>
+<p><strong>指标如何读：</strong>“原空间5近邻保留”是标准化 7,129
+维空间与相应二维图的近邻名单平均重合；“与基线重合”是两张二维 UMAP
+图的近邻名单平均重合。二者均按每个样本各取 5 个近邻、计算交集占 5
+的比例后再对 72
+个样本取平均。它们是本报告的描述性辅助量，不是分类准确率、UMAP
+方差解释率或标准 trustworthiness 指标。</p>
+<p><strong>稳定邻域结果：</strong>四组二维嵌入的 5 近邻交集中，G004
+的共同邻居为 G001、G007、G008、G027、G049；G008 的共同邻居为
+G001、G004、G007、G027、G049。G010 的共同邻居数为
+0，说明不同样本的邻域稳定程度不一。这里的稳定只针对本次四种设置。</p>
+<p><strong>PCA 与 UMAP
+比较：</strong>下表按工作单要求概括两种方法；预测用途都必须在训练折内拟合变换。</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>比较项</strong></th>
+<th style="text-align: center;"><strong>PCA</strong></th>
+<th style="text-align: center;"><strong>UMAP</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">线性/非线性</td>
+<td style="text-align: center;">线性投影</td>
+<td style="text-align: center;">非线性嵌入</td>
+</tr>
+<tr>
+<td style="text-align: center;">主要保留信息</td>
+<td
+style="text-align: center;">依次最大化正交方向的投影方差；固定维数下最小化平方重建误差</td>
+<td
+style="text-align: center;">建立高维近邻图并优化低维布局，侧重局部邻域关系</td>
+</tr>
+<tr>
+<td style="text-align: center;">坐标轴含义</td>
+<td
+style="text-align: center;">特征的带权线性组合，可查看权重与得分</td>
+<td
+style="text-align: center;">嵌入坐标，没有固定的基因或生物学单位</td>
+</tr>
+<tr>
+<td style="text-align: center;">方差解释率</td>
+<td style="text-align: center;">可计算并需注明输入预处理</td>
+<td style="text-align: center;">没有与 PCA 等价的 explained variance
+ratio</td>
+</tr>
+<tr>
+<td style="text-align: center;">局部与全局距离</td>
+<td
+style="text-align: center;">二维只保留部分线性子空间；截断后距离仍可能失真</td>
+<td
+style="text-align: center;">邻近关系是局部线索；远处岛屿距离、方向、面积不能直接作生物学量</td>
+</tr>
+<tr>
+<td style="text-align: center;">参数与随机性</td>
+<td style="text-align: center;">对标准化和成分数敏感；本次 full SVD
+确定到符号翻转</td>
+<td style="text-align: center;">受
+n_neighbors、min_dist、度量和随机种子影响</td>
+</tr>
+<tr>
+<td style="text-align: center;">预测时避免泄露</td>
+<td style="text-align: center;">Scaler 与 PCA
+只在每折训练数据拟合，再变换验证数据</td>
+<td style="text-align: center;">Scaler 与 UMAP
+也须训练折拟合；仅用已拟合模型转换验证数据</td>
+</tr>
+</tbody>
+</table>
+<p><strong>岛屿与单细胞展示：</strong>本工作单没有定义聚类算法或岛屿边界，因此图上“有几团”不是正式簇数。岛屿数量、相互距离、方向和面积会受布局、参数与随机性影响，不能直接当作亚型数、疾病阶段或群体比例。UMAP
+常用于单细胞或复杂表型的探索性展示，因为许多局部非线性关系不容易由两条线性
+PCA 轴呈现；它帮助提出结构假设，但不替代验证。</p>
+<p><strong>批次边界：</strong>本数据没有可用批次字段，无法检验或调整批次效应，因此不能宣称已排除批次影响。样本相近或分离可能来自生物差异，也可能来自技术处理差异。</p>
+<p><strong>图能支持／不能支持：</strong>（1）支持：当前设定下有些样本在局部邻域中较相近；不能推出所有原空间邻居都被完整保留。（2）支持：诊断着色可帮助探索表达排列是否与已知标签相关；不能凭分离证明疾病机制或真实亚型数量。（3）支持：图可帮助提出后续建模或实验问题；不能据此报告新患者预测能力，也不能排除批次影响。</p>
+<h2 id="任务四研究团队结论与三道作业"><strong>3.4
+任务四：研究团队结论与三道作业</strong></h2>
+<p><strong>主张：</strong>二维降维图显示当前样本中存在值得进一步检验的表达结构，但不能单独证明疾病机制或预测新患者。</p>
+<p><strong>证据：</strong>标准化 PCA 前两维合计解释 24.3678%
+的方差；只将 UMAP 的 n_neighbors 从 15 改为 5 后，与基线二维 5
+近邻平均重合为 55.28%。</p>
+<p><strong>推理：</strong>二维投影遗漏大量高维变异，UMAP
+的部分近邻也会随设定变化，因此图中的分离是候选线索，不是完整结构或因果证据。</p>
+<p><strong>边界与后续验证：</strong>本数据仅有 72
+个样本且缺少批次字段。应补充批次和患者独立性信息，在预先固定完整
+Pipeline
+的独立队列中验证预测；若提出机制，还需针对候选分子机制做额外实验验证。</p>
+<p><strong>作业 1：PCA
+第一主成分代表什么？</strong>它是使样本投影方差最大的单位线性方向，样本得分由所有输入探针加权得到。本次标准化
+PC1 解释总方差 14.9216%；探针 X92518_s_at 的方向权重约为
++0.02878558，只是 PC1 计算中的一项，不代表该探针对疾病有因果作用。</p>
+<p><strong>作业 2：为什么 PCA 前考虑标准化？</strong>PCA
+依赖方差，原尺度波动大的探针更容易影响主方向。本次标准化与原尺度 PCA 的
+PC1
+前五探针完全不同，说明尺度处理改变了关注方向。标准化让探针按各自标准差比较，代价是低变异噪声可能被相对放大；须结合数据和分析目标，不以解释率单项选优。</p>
+<p><strong>作业 3：UMAP 图能说明什么、不能说明什么？</strong>UMAP
+可以展示当前预处理和设置下的局部邻域，帮助提出候选结构。本次仅改随机种子后，与基线二维
+5 近邻平均重合为
+60.28%，说明部分邻居保持、布局并非唯一。图不能单独证明机制、真实亚型数或新患者预测准确率，也不能把全局岛屿距离当成生物距离。</p>
+<h1 id="数据与复现"><strong>4 数据与复现</strong></h1>
+<p><strong>数据与拟合范围：</strong>Golub 白血病表达数据课程副本，72
+个样本、7,129 个探针；ALL 47、AML 25。描述性 PCA/UMAP 使用全部 72
+个样本，诊断只在拟合后用于着色；交叉验证只用原始 38 个训练样本，每折
+Pipeline 内拟合。未用原始测试集分数选方案。</p>
+<p><strong>软件版本：</strong>Python 3.12.15；NumPy 2.3.5；pandas
+2.3.3；SciPy 1.17.1；scikit-learn 1.8.0；umap-learn 0.5.12；Matplotlib
+3.10.8。</p>
+<p><strong>参数记录：</strong>标准化为按列中心化并按总体标准差缩放（ddof=0）；PCA
+使用 full SVD；UMAP 基线为
+n_neighbors=15、min_dist=0.1、metric=euclidean、random_state=42、n_jobs=1。对照分别改
+n_neighbors=5、min_dist=0.5、random_state=7。交叉验证为三折分层，shuffle=True、种子
+42。</p>
+<p><strong>可复现文件：</strong>完整分析代码为
+.tmp/dimension-reduction/student_analysis.py；运行摘要为
+summary.json；交叉验证表为 cross-validation.csv；PCA 解释率与权重表为
+pca-variance.csv、pca-loadings.csv；样本坐标和 UMAP 稳定邻居表均保存在
+.tmp/dimension-reduction/student-results/。运行图和表可由代码重新生成。</p>
+<p><strong>输入文件校验：</strong>leukemia.csv 的 SHA-256 为
+915bce00295ac470f6bd970a4032730a170a080642a5da53ab0bcb0545156f19。</p>
+<h1 id="参考资料"><strong>5 参考资料</strong></h1>
+<p>Golub TR, et al. Molecular Classification of Cancer: Class Discovery
+and Class Prediction by Gene Expression Monitoring. Science.
+1999;286(5439):531–537. doi:10.1126/science.286.5439.531.</p>
+<p>McInnes L, Healy J, Melville J. UMAP: Uniform Manifold Approximation
+and Projection for Dimension Reduction. arXiv:1802.03426.</p>
+</body>
+</html>
